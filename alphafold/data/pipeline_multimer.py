@@ -32,7 +32,6 @@ from alphafold.data import parsers
 from alphafold.data import pipeline
 from alphafold.data.tools import jackhmmer
 import numpy as np
-import ray
 
 # Internal import (7716).
 
@@ -229,10 +228,10 @@ class DataPipeline:
     # result = pipeline.run_msa_tool(
     #     self._uniprot_msa_runner, input_fasta_path, out_path, 'sto',
     #     self.use_precomputed_msas)
-    result = [pipeline.run_msa_tool.remote(
+    result = [pipeline.run_msa_tool(
         self._uniprot_msa_runner, input_fasta_path, out_path, 'sto',
         self.use_precomputed_msas, None)]
-    result = ray.get(result)[0]
+    result = result[0]
     
     msa = parsers.parse_stockholm(result['sto'])
     msa = msa.truncate(max_seqs=self._max_uniprot_hits)

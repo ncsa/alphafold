@@ -26,7 +26,6 @@ from alphafold.data.tools import hhsearch
 from alphafold.data.tools import hmmsearch
 from alphafold.data.tools import jackhmmer
 import numpy as np
-import ray
 
 # Internal import (7716).
 
@@ -84,7 +83,6 @@ def make_msa_features(msas: Sequence[parsers.Msa]) -> FeatureDict:
   features['msa_species_identifiers'] = np.array(species_ids, dtype=np.object_)
   return features
 
-@ray.remote
 def run_msa_tool(msa_runner, input_fasta_path: str, msa_out_path: str,
                  msa_format: str, use_precomputed_msas: bool,
                  max_sto_sequences: Optional[int] = None
@@ -234,11 +232,9 @@ class DataPipeline:
     use_precomputed_msases = [self.use_precomputed_msas] * 3
     max_sto_sequenceses = [self.uniref_max_hits, self.mgnify_max_hits, None]
     zipped_options = zip(msa_runners, input_fasta_paths, msa_out_paths, msa_formats, use_precomputed_msases, max_sto_sequenceses)
-    msa_outputs = [run_msa_tool.remote(msa_runner, input_fasta_path, msa_out_path, msa_format, use_precomputed_msas, max_sto_sequences) 
+    msa_outputs = [run_msa_tool(msa_runner, input_fasta_path, msa_out_path, msa_format, use_precomputed_msas, max_sto_sequences)
                                                                  for msa_runner, input_fasta_path, msa_out_path, msa_format, use_precomputed_msas, max_sto_sequences in zipped_options]
-    msa_outputs = ray.get(msa_outputs)
-    # ray.shutdown()
-    
+
     if self._use_small_bfd:
         jackhmmer_uniref90_result, jackhmmer_mgnify_result, jackhmmer_small_bfd_result = msa_outputs
     else:
