@@ -40,7 +40,7 @@ setup(
         'numpy',
         'pandas',
         'scipy',
-        'tensorflow-gpu',
+        'tensorflow',
     ],
     tests_require=[
         'matplotlib',  # For notebook_utils_test.
