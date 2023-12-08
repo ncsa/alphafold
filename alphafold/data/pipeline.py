@@ -15,6 +15,7 @@
 """Functions for building the input features for the AlphaFold model."""
 
 import os
+import concurrent.futures
 from typing import Any, Mapping, MutableMapping, Optional, Sequence, Union
 from absl import logging
 from alphafold.common import residue_constants
@@ -232,8 +233,22 @@ class DataPipeline:
     use_precomputed_msases = [self.use_precomputed_msas] * 3
     max_sto_sequenceses = [self.uniref_max_hits, self.mgnify_max_hits, None]
     zipped_options = zip(msa_runners, input_fasta_paths, msa_out_paths, msa_formats, use_precomputed_msases, max_sto_sequenceses)
-    msa_outputs = [run_msa_tool(msa_runner, input_fasta_path, msa_out_path, msa_format, use_precomputed_msas, max_sto_sequences)
-                                                                 for msa_runner, input_fasta_path, msa_out_path, msa_format, use_precomputed_msas, max_sto_sequences in zipped_options]
+    with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
+        # Submit tasks to the executor
+        futures = [executor.submit(run_msa_tool,
+                                   msa_runner,
+                                   input_fasta_path,
+                                   msa_out_path,
+                                   msa_format,
+                                   use_precomputed_msas,
+                                   max_sto_sequences)
+                   for msa_runner, input_fasta_path, msa_out_path, msa_format, use_precomputed_msas, max_sto_sequences
+                   in zipped_options]
+
+        # Wait for all tasks to complete and retrieve the results
+        msa_outputs = [future.result() for future in concurrent.futures.as_completed(futures)]
+
+        print("Results:", msa_outputs)
 
     if self._use_small_bfd:
         jackhmmer_uniref90_result, jackhmmer_mgnify_result, jackhmmer_small_bfd_result = msa_outputs
