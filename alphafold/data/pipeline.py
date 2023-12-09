@@ -245,10 +245,8 @@ class DataPipeline:
                    for msa_runner, input_fasta_path, msa_out_path, msa_format, use_precomputed_msas, max_sto_sequences
                    in zipped_options]
 
-        # Wait for all tasks to complete and retrieve the results
-        msa_outputs = [future.result() for future in concurrent.futures.as_completed(futures)]
-
-        print("Results:", msa_outputs)
+    # Wait for all tasks to complete and retrieve the results
+    msa_outputs = [future.result() for future in concurrent.futures.as_completed(futures)]
 
     if self._use_small_bfd:
         jackhmmer_uniref90_result, jackhmmer_mgnify_result, jackhmmer_small_bfd_result = msa_outputs
